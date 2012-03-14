@@ -161,8 +161,10 @@ int parse_xml_to_cache(char *xml, int xlen, char *cachepath, char *cachefile)
 	int cachefd;	
 
 	cachefd = open(cachefile, O_RDWR);
-	if (cachefd < 0)
+	if (cachefd < 0) {
+		printf("Unable to get cache FD\n");
 		return -1;
+	}
 
 	struct flock l;
 	l.l_type = F_WRLCK;
