@@ -229,7 +229,6 @@ int parse_xml_to_cache(char *xml, int xlen, char *cachepath, char *cachefile)
 		}
 
 		printf("Error parsing #%d (%d,%d)\n", pErr->code, pErr->line,pErr->int2);
-		
 
 		retc = -1;
 		goto cleanup;
@@ -274,7 +273,6 @@ int parse_xml_to_cache(char *xml, int xlen, char *cachepath, char *cachefile)
 		                                retc = -1;
                 		                goto cleanup;
 					}
-                        
 
 					for (node3 = node2->children; node3; node3 = node3->next) {
                		                        if (node3->type == XML_ELEMENT_NODE && strcmp((const char *) node3->name, "HOST") == 0) {
@@ -294,7 +292,7 @@ int parse_xml_to_cache(char *xml, int xlen, char *cachepath, char *cachefile)
 								retc = -1;
 								goto cleanup;
 							}
-							
+
 							for (node4 = node3->children; node4; node4 = node4->next) {
 								if (node4->type == XML_ELEMENT_NODE && strcmp((const char *) node4->name, "METRIC") == 0) {
 									name = (char *) xmlGetProp(node4, (const xmlChar *) "NAME");
@@ -390,7 +388,7 @@ static int threshold_check(char *threshold, char *value)
 	}
 
 	int length = strlen(threshold);
-  
+
 	float val = strtof(value, NULL);
 	float val2, val3;
 
@@ -472,11 +470,11 @@ int get_config(int argc, char *argv[])
 		        case 'w':
 		        	strcpy(config.warning, optarg);
 		        	break;
-	
+
 		        case 'c':
 		        	strcpy(config.critical, optarg);
 		        	break;
-	
+
 		        case 'f':
 		        	strcpy(config.cachepath, optarg);
 		        	break;
@@ -495,7 +493,7 @@ int get_config(int argc, char *argv[])
 
 		        case '?':
 		            break;
-	
+
 		        //default:
 		            // TODO: anything?
 	        }
@@ -531,7 +529,7 @@ void backoff(float base)
 
 	debug("Sleeping for %f seconds", r);
 
-	nanosleep(&b, NULL);	
+	nanosleep(&b, NULL);
 }
 
 int main(int argc, char *argv[])
@@ -614,7 +612,7 @@ retry:
 			retry_count++;
 			goto retry;
 		}
-		
+
 		debug("Parsing XML into %s\n", config.cachepath);
 		ret = parse_xml_to_cache(xml, ret, config.cachepath, cachefile);
 		if (ret < 0) {
@@ -625,7 +623,7 @@ retry:
 
 		release_cache_lock(cachefile, &cachefd);
 	}
-	
+
 	ret = fetch_value_from_cache(hostfile, config.metric, (char *) &value, (char *) units);
 
 	if (threshold_check(config.critical, value)) {
