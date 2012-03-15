@@ -153,35 +153,65 @@ int ensure_path(const char *path)
 	return 0;
 }
 
+int get_cache_lock(char *cachefile, int *cachefd)
+{
+	int ret;
+
+	if (*cachefd < 0) {
+	        *cachefd = open(cachefile, O_RDWR);
+        	if (*cachefd < 0) {
+                	printf("Unable to get cache FD\n");
+	                return -1;
+	        }
+	}
+
+        struct flock l;
+        l.l_type = F_WRLCK;
+        l.l_whence = SEEK_SET;
+        l.l_start = 0;
+        l.l_len = 0;
+
+	ret = fcntl(*cachefd, F_SETLK, &l);
+        if (ret < 0) {
+        	return -1;
+        }
+
+	return 0;
+}
+
+int release_cache_lock (char *cachefile, int *cachefd)
+{
+	int ret;
+
+        // touch global cache
+        ret = utimes(cachefile, NULL);
+        if (ret < 0) {
+                // TODO: probably not fatal ?
+        }
+
+	struct flock l;
+        l.l_type = F_UNLCK;
+        l.l_whence = SEEK_SET;
+        l.l_start = 0;
+        l.l_len = 0;
+
+        ret = fcntl(*cachefd, F_SETLK, &l);
+        if (ret < 0) {
+                printf("Failed to remove lock\n");
+		// TODO: will this be fatal ?
+        }
+
+        close(*cachefd);
+	*cachefd = -1;
+
+	return 0;
+}
+
 int parse_xml_to_cache(char *xml, int xlen, char *cachepath, char *cachefile)
 {
 	int retc = 0;
 
-	// lock global cache
-	int cachefd;	
-
-	cachefd = open(cachefile, O_RDWR);
-	if (cachefd < 0) {
-		printf("Unable to get cache FD\n");
-		return -1;
-	}
-
-	struct flock l;
-	l.l_type = F_WRLCK;
-	l.l_whence = SEEK_SET;
-	l.l_start = 0;
-	l.l_len = 0;
-	
 	int ret;
-
-	ret = fcntl(cachefd, F_SETLK, &l);
-	if (ret < 0) {
-		printf("Failed to get lock\n");
-		// TODO: probably handle this better
-		return -1;
-	}
-
-	// parse XML
 
 	xmlDoc *doc = NULL;
 	xmlNode *root = NULL;
@@ -292,21 +322,6 @@ cleanup:
 	xmlFreeDoc(doc);
 
 	xmlCleanupParser();
-
-	// touch global cache
-	ret = utimes(cachefile, NULL);
-	if (ret < 0) {
-		// TODO: probably not fatal ?
-	}
-
-	// unlock global cache
-	l.l_type = F_UNLCK;
-	ret = fcntl(cachefd, F_SETLK, &l);
-	if (ret < 0) {
-		printf("Failed to remove lock\n");
-	}
-
-	close(cachefd);
 
 	return retc;
 }
@@ -499,6 +514,26 @@ int get_config(int argc, char *argv[])
 	return 0;
 }
 
+void backoff(float base)
+{
+        float f = 1.0 / RAND_MAX;
+
+        struct timespec t;
+        clock_gettime(CLOCK_MONOTONIC, &t);
+
+        srandom(t.tv_nsec);
+
+        float r = base + 3 * (f * random());
+
+        struct timespec b;
+        b.tv_sec = (int) r;
+        b.tv_nsec = 1000000000 * (r - b.tv_sec);
+
+	debug("Sleeping for %f seconds", r);
+
+	nanosleep(&b, NULL);	
+}
+
 int main(int argc, char *argv[])
 {
 	int retc = 0;
@@ -508,6 +543,8 @@ int main(int argc, char *argv[])
         char *cachefile = NULL;
 	char *xml = NULL;
         char *xmlfile = NULL;
+
+	int cachefd = -1;
 
 	ret = get_config(argc, argv);
 	if (ret < 0) {
@@ -529,6 +566,9 @@ int main(int argc, char *argv[])
 	char value[64];
 	char units[64];
 
+	int retry_count = 0, ret2;
+
+retry:
 	debug("Checking cache at %s\n", cachefile);
 	ret = check_cache_age(cachefile);
 	if (ret < 0) {
@@ -561,6 +601,20 @@ int main(int argc, char *argv[])
 			}
 		}
 
+		ret2 = get_cache_lock(cachefile, &cachefd);
+		if (ret2 < 0) {
+			if (retry_count == 2) {
+				printf("ERROR: Unable to get cache lock after %d tries. Stale lock?", (retry_count + 1));
+		                retc = 2;
+                		goto cleanup;
+			} else {
+				backoff(retry_count / 2.0);
+			}
+
+			retry_count++;
+			goto retry;
+		}
+		
 		debug("Parsing XML into %s\n", config.cachepath);
 		ret = parse_xml_to_cache(xml, ret, config.cachepath, cachefile);
 		if (ret < 0) {
@@ -568,6 +622,8 @@ int main(int argc, char *argv[])
 			retc = 2;
 			goto cleanup;
 		}
+
+		release_cache_lock(cachefile, &cachefd);
 	}
 	
 	ret = fetch_value_from_cache(hostfile, config.metric, (char *) &value, (char *) units);
@@ -585,6 +641,10 @@ int main(int argc, char *argv[])
 	}
 
 cleanup:
+	if (cachefd >= 0) {
+		release_cache_lock(cachefile, &cachefd);
+	}
+
 	if (xml != NULL)
 		free(xml);
 
