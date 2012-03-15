@@ -23,6 +23,7 @@
 
 //#include <arpa/inet.h>
 
+#define MAX_RETRY 4
 
 struct {
         int max_age;
@@ -601,8 +602,8 @@ retry:
 
 		ret2 = get_cache_lock(cachefile, &cachefd);
 		if (ret2 < 0) {
-			if (retry_count == 2) {
-				printf("ERROR: Unable to get cache lock after %d tries. Stale lock?", (retry_count + 1));
+			if (retry_count == MAX_RETRY) {
+				printf("ERROR: Unable to get cache lock after retrying %d times. Stale lock?", retry_count);
 		                retc = 2;
                 		goto cleanup;
 			} else {
