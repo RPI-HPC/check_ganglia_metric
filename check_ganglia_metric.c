@@ -327,6 +327,7 @@ cleanup:
 
 int fetch_value_from_cache(char *hostfile, char *metric, char *result, char *units)
 {
+	int retc = -1;
 	FILE *f;
 
 	f = fopen(hostfile, "r");
@@ -345,13 +346,15 @@ int fetch_value_from_cache(char *hostfile, char *metric, char *result, char *uni
 			strcpy(units, strtok(NULL, ","));
 			strcpy(result, strtok(NULL, ","));
 
+			retc = 0;
+
 			break;
 		}
 	}
 
 	fclose(f);
 
-	return 0;
+	return retc;
 }
 
 int write_xml(char *xml, int xlen, char *xmlfile)
