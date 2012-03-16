@@ -327,7 +327,7 @@ cleanup:
 
 int fetch_value_from_cache(char *hostfile, char *metric, char *result, char *units)
 {
-	int retc = -1;
+	int retc = 0;
 	FILE *f;
 
 	f = fopen(hostfile, "r");
@@ -346,7 +346,7 @@ int fetch_value_from_cache(char *hostfile, char *metric, char *result, char *uni
 			strcpy(units, strtok(NULL, ","));
 			strcpy(result, strtok(NULL, ","));
 
-			retc = 0;
+			retc = 1;
 
 			break;
 		}
@@ -628,7 +628,21 @@ retry:
 		release_cache_lock(cachefile, &cachefd);
 	}
 
+	debug("Fetching %s metric from cache at %s\n", config.metric, hostfile);
+
 	ret = fetch_value_from_cache(hostfile, config.metric, (char *) &value, (char *) units);
+
+	if (ret < 0) {
+		printf("CRITICAL - Unable to read cache at %s\n", hostfile);
+		retc = 2;
+		goto cleanup;
+	} else if (ret == 0) {
+		printf("CRITICAL - Metric %s not found\n", config.metric);
+		retc = 2;
+		goto cleanup;
+	}
+
+	debug("Checking...\n");
 
 	if (threshold_check(config.critical, value)) {
 		printf("CRITICAL - %s %s\n", value, units);
