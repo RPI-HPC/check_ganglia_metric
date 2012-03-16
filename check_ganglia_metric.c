@@ -37,6 +37,8 @@ struct {
 	char warning[64];
 	char critical[64];
 
+	int heartbeat;
+
 	int debug;
 	int dump;
 } config;
@@ -294,6 +296,9 @@ int parse_xml_to_cache(char *xml, int xlen, char *cachepath, char *cachefile)
 								goto cleanup;
 							}
 
+							value = (char *) xmlGetProp(node3, (const xmlChar *) "REPORTED");
+							fprintf(f, "#REPORTED, ,%s\n", value);
+
 							for (node4 = node3->children; node4; node4 = node4->next) {
 								if (node4->type == XML_ELEMENT_NODE && strcmp((const char *) node4->name, "METRIC") == 0) {
 									name = (char *) xmlGetProp(node4, (const xmlChar *) "NAME");
@@ -445,6 +450,7 @@ int get_config(int argc, char *argv[])
 	config.critical[0] = '\0';
 	config.host[0] = '\0';
 	config.metric[0] = '\0';
+	config.heartbeat = -1;
 
 	// get command line options
 	static struct option long_options[] = {
@@ -454,6 +460,7 @@ int get_config(int argc, char *argv[])
         	{"critical",      required_argument, 0, 'c' },
         	{"metric_host",   required_argument, 0, 'a' },
         	{"metric_name",   required_argument, 0, 'm' },
+		{"heartbeat",     required_argument, 0, 'h' },
 		{"verbose",       no_argument,       0, 'v' },
         	{0,               0,                 0,  0  }
         };
@@ -461,7 +468,7 @@ int get_config(int argc, char *argv[])
 	while (1) {
 		//int this_option_optind = optind ? optind : 1;
 		int option_index = 0;
-		c = getopt_long(argc, argv, "vf:w:c:m:a:d:", long_options, &option_index);
+		c = getopt_long(argc, argv, "vf:w:c:m:a:d:h:", long_options, &option_index);
 	        if (c == -1)
 			break;
 
@@ -494,7 +501,8 @@ int get_config(int argc, char *argv[])
 			case 'm':
 				strcpy(config.metric, optarg);
 				break;
-
+			case 'h':
+				config.heartbeat = strtol(optarg, NULL, 10);
 		        case '?':
 		            break;
 
@@ -508,8 +516,8 @@ int get_config(int argc, char *argv[])
 		return -1;
 	}
 
-	if (strcmp(config.metric, "") == 0) {
-		printf("Must supply metric to check!\n");
+	if (strcmp(config.metric, "") == 0 && config.heartbeat < 0) {
+		printf("Must choose positive heartbeat or supply metric to check!\n");
 		return -1;
 	}
 
@@ -554,7 +562,11 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	debug("Checking %s for %s metric\n", config.host, config.metric);
+	if (config.heartbeat > 0) {
+		debug("Checking heartbeat for %s with threshold %d\n", config.host, config.heartbeat);
+	} else {
+		debug("Checking %s for %s metric\n", config.host, config.metric);
+	}
 
 	int hostfile_len = strlen(config.cachepath) + strlen(config.host) + 2;
 	int cachefile_len = strlen(config.cachepath) + strlen(config.cachename) + 2;
@@ -628,6 +640,10 @@ retry:
 		release_cache_lock(cachefile, &cachefd);
 	}
 
+	if (config.heartbeat > 0) {
+		strcpy(config.metric, "#REPORTED");
+	}
+
 	debug("Fetching %s metric from cache at %s\n", config.metric, hostfile);
 
 	ret = fetch_value_from_cache(hostfile, config.metric, (char *) &value, (char *) units);
@@ -643,6 +659,19 @@ retry:
 	}
 
 	debug("Checking...\n");
+
+	if (config.heartbeat > 0) {
+		int diff = time(NULL) - strtol(value, NULL, 10);
+		if (diff > config.heartbeat) {
+			printf("CRITICAL - %d over threshold %d\n", diff, config.heartbeat);
+			retc = 2;
+			goto cleanup;
+		} else {
+			printf("OK - %d\n", diff);
+			retc = 2;
+			goto cleanup;
+		}
+	}
 
 	if (threshold_check(config.critical, value)) {
 		printf("CRITICAL - %s %s\n", value, units);
