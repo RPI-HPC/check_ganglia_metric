@@ -539,7 +539,7 @@ void backoff(float base)
         b.tv_sec = (int) r;
         b.tv_nsec = 1000000000 * (r - b.tv_sec);
 
-	debug("Sleeping for %f seconds", r);
+	debug("Sleeping for %f seconds\n", r);
 
 	nanosleep(&b, NULL);
 }
