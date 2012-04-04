@@ -668,7 +668,6 @@ retry:
 			goto cleanup;
 		} else {
 			printf("OK - %d\n", diff);
-			retc = 2;
 			goto cleanup;
 		}
 	}
