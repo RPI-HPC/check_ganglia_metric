@@ -45,6 +45,18 @@ struct {
 
 static void debug(const char *fmt, ...);
 
+int create_cachefile(char *cachefile)
+{
+	int ret;
+	ret = creat(cachefile, S_IRUSR | S_IWUSR);
+	if (ret < 0) {
+		return -1;
+	} else {
+		close(ret);
+		return config.max_age;
+	}
+}
+
 int check_cache_age(char *cachefile)
 {
 	// check global cache age
@@ -55,13 +67,7 @@ int check_cache_age(char *cachefile)
         ret = stat(cachefile, &f);
         if (ret < 0) {
 		if (errno == ENOENT) {
-			ret = creat(cachefile, S_IRUSR | S_IWUSR);
-			if (ret < 0) {
-				return -1;
-			} else {
-				close(ret);
-				return config.max_age;
-			}
+			return create_cachefile(cachefile);
 		} else {
 			debug("DEBUG: Unable to stat cache file.\n");
 	                return -1;
