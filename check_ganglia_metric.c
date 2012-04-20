@@ -105,31 +105,51 @@ int fetch_xml(char *host, int port, char **dest)
 		return -3;
 	}
 
+	debug("Connected\n");
+
 	int ret, offset = 0;
 
-	int buffer_size = 4194304; // 4 MB
+#define CHUNK 1048576
+#define MINI_CHUNK 65536
+
+	int buffer_size = CHUNK;
+
+	debug("%d kB chunk size\n", buffer_size / 1024);
 
 	char *buffer = malloc(buffer_size);
+	char *buffer2 = NULL;
 
-	//ret = read(sockfd, dest, 65536);
+	debug("Fetching...\n");
 
-	ret = recv(sockfd, buffer, 65536, 0);
+	ret = recv(sockfd, buffer, MINI_CHUNK, 0);
 
 	while (ret > 0) {
 		offset += ret;
 
-		if (offset > buffer_size) {
-			// TODO: grow buffer
-			return -4;
+		if (offset + MINI_CHUNK > buffer_size) {
+			buffer_size += CHUNK;
+			buffer2 = (char *) realloc(buffer, buffer_size);
+
+			debug("Grow buffer to %d kB\n", buffer_size / 1024);
+
+			if (buffer2 == NULL) {
+				return -4;
+			} else {
+				buffer = buffer2;
+			}
 		}
 
-		//ret = read(sockfd, dest + offset, 65536);
-		ret = recv(sockfd, buffer + offset, 65536, 0);
+		ret = recv(sockfd, buffer + offset, MINI_CHUNK, 0);
 	}
 
 	if (ret < 0) {
 		printf("Error receiving %d\n", errno);
+		return -4;
 	}
+
+	offset += ret;
+
+	debug("Receive used approx %d kB of %d kB allocated.\n", offset / 1024, buffer_size / 1024);
 
 	*dest = buffer;
 
@@ -596,7 +616,7 @@ retry:
 		debug("Connecting to %s on port %d\n", config.gmetad_host, config.gmetad_port);
 		ret = fetch_xml(config.gmetad_host, config.gmetad_port, &xml);
 		if (ret < 0) {
-			printf("ERROR: Unable to connect %d.\n", ret);
+			printf("ERROR: Unable to get XML data: %d.\n", ret);
 			retc = 2;
 			goto cleanup;
 		}
