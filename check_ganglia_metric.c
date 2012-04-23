@@ -17,6 +17,8 @@
 #include <getopt.h>
 
 #define MAX_RETRY 4
+#define CHUNK 1048576
+#define MINI_CHUNK 65536
 
 struct {
         int max_age;
@@ -109,10 +111,6 @@ int fetch_xml(char *host, int port, char **dest)
 	}
 
 	int ret, offset = 0;
-
-#define CHUNK 1048576
-#define MINI_CHUNK 65536
-
 	int buffer_size = CHUNK;
 
 	debug("%d kB chunk size\n", buffer_size / 1024);
