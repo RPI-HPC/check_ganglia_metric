@@ -40,6 +40,10 @@ struct {
 
 static void debug(const char *fmt, ...);
 
+/*
+ * Create global cache file
+ */
+
 int create_cachefile(char *cachefile)
 {
 	int ret;
@@ -52,10 +56,12 @@ int create_cachefile(char *cachefile)
 	}
 }
 
+/*
+ * Check global cache file age
+ */
+
 int check_cache_age(char *cachefile)
 {
-	// check global cache age
-
         struct stat f;
         int ret;
 
@@ -71,6 +77,10 @@ int check_cache_age(char *cachefile)
 
         return time(NULL) - f.st_mtime;
 }
+
+/*
+ * Connect to gmetad
+ */
 
 int gmetad_connect(char *host, int port)
 {
@@ -101,6 +111,10 @@ int gmetad_connect(char *host, int port)
 	
 	return sockfd;
 }
+
+/*
+ * Fetch XML from gmetad
+ */
 
 int fetch_xml(char *host, int port, char **dest)
 {
@@ -157,6 +171,10 @@ int fetch_xml(char *host, int port, char **dest)
 	return offset;
 }
 
+/*
+ * Ensure a path exists, create if it does not
+ */
+
 int ensure_path(const char *path)
 {
 	struct stat f;
@@ -174,6 +192,10 @@ int ensure_path(const char *path)
 
 	return 0;
 }
+
+/*
+ * Lock the global cache file
+ */
 
 int get_cache_lock(char *cachefile, int *cachefd)
 {
@@ -200,6 +222,10 @@ int get_cache_lock(char *cachefile, int *cachefd)
 
 	return 0;
 }
+
+/*
+ * Release the lock on the global cache file
+ */
 
 int release_cache_lock (char *cachefile, int *cachefd)
 {
@@ -228,6 +254,10 @@ int release_cache_lock (char *cachefile, int *cachefd)
 
 	return 0;
 }
+
+/*
+ * Parse the XML out to per-host cache files
+ */
 
 int parse_xml_to_cache(char *xml, int xlen, char *cachepath, char *cachefile)
 {
@@ -349,6 +379,10 @@ cleanup:
 	return retc;
 }
 
+/*
+ * Retrieve a value from a per-host cache file
+ */
+
 int fetch_value_from_cache(char *hostfile, char *metric, char *result, char *units)
 {
 	int retc = 0;
@@ -381,6 +415,10 @@ int fetch_value_from_cache(char *hostfile, char *metric, char *result, char *uni
 	return retc;
 }
 
+/*
+ * Write XML out to a file
+ */
+
 int write_xml(char *xml, int xlen, char *xmlfile)
 {
 	int f;
@@ -399,6 +437,10 @@ int write_xml(char *xml, int xlen, char *xmlfile)
 	return 0;
 }
 
+/*
+ * Display a debug message is debugging is enabled
+ */
+
 static void debug(const char *fmt, ...)
 {
 	if (config.debug) {
@@ -408,6 +450,10 @@ static void debug(const char *fmt, ...)
 		va_end(parg);
 	}
 }
+
+/*
+ * Perform a threshold check of a particular value
+ */
 
 static int threshold_check(char *threshold, char *value)
 {
@@ -451,6 +497,10 @@ static int threshold_check(char *threshold, char *value)
 
 	return 0;
 }
+
+/*
+ * Read command-line options and build a runtime configuration
+ */
 
 int get_config(int argc, char *argv[])
 {
@@ -537,6 +587,10 @@ int get_config(int argc, char *argv[])
 
 	return 0;
 }
+
+/*
+ * Backoff timer for global cache file lock collisions
+ */
 
 void backoff(float base)
 {
