@@ -84,17 +84,11 @@ int fetch_xml(char *host, int port, char **dest)
 	if (gmetad == NULL)
 		return -2;
 
-	//bzero((char *) &addr, sizeof(addr));
 	memset(&addr, 0, sizeof(addr));
 
 	addr.sin_family = AF_INET;
-	//bcopy((char *)gmetad->h_addr,
-	//      (char *)&addr.sin_addr.s_addr,
-	//     gmetad->h_length);
 
 	memcpy(&addr.sin_addr.s_addr, gmetad->h_addr, gmetad->h_length);
-
-	//inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
 
 	addr.sin_port = htons(port);
 
@@ -455,7 +449,6 @@ static int threshold_check(char *threshold, char *value)
 int get_config(int argc, char *argv[])
 {
 	int c;
-	//int digit_optind = 0;
 
         // set defaults for optional params
         config.max_age = 120;
@@ -485,7 +478,6 @@ int get_config(int argc, char *argv[])
         };
 
 	while (1) {
-		//int this_option_optind = optind ? optind : 1;
 		int option_index = 0;
 		c = getopt_long(argc, argv, "vf:w:c:m:a:d:h:", long_options, &option_index);
 	        if (c == -1)
@@ -524,9 +516,6 @@ int get_config(int argc, char *argv[])
 				config.heartbeat = strtol(optarg, NULL, 10);
 		        case '?':
 		            break;
-
-		        //default:
-		            // TODO: anything?
 	        }
 	}
 
