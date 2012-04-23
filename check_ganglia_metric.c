@@ -4,24 +4,17 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netdb.h>
-//#include <netinet/in.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <stdarg.h>
 #include <time.h>
 #include <errno.h>
 #include <fcntl.h>
-
 #include <libxml/parser.h>
 #include <libxml/tree.h>
-
 #include <math.h>
-
 #include <sys/time.h>
-
 #include <getopt.h>
-
-//#include <arpa/inet.h>
 
 #define MAX_RETRY 4
 
