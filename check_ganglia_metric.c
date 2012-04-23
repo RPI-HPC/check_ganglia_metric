@@ -70,7 +70,7 @@ int check_cache_age(char *cachefile)
         return time(NULL) - f.st_mtime;
 }
 
-int fetch_xml(char *host, int port, char **dest)
+int gmetad_connect(char *host, int port)
 {
 	int sockfd;
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -85,11 +85,8 @@ int fetch_xml(char *host, int port, char **dest)
 		return -2;
 
 	memset(&addr, 0, sizeof(addr));
-
 	addr.sin_family = AF_INET;
-
 	memcpy(&addr.sin_addr.s_addr, gmetad->h_addr, gmetad->h_length);
-
 	addr.sin_port = htons(port);
 
 	if (connect(sockfd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
@@ -99,6 +96,17 @@ int fetch_xml(char *host, int port, char **dest)
 	}
 
 	debug("Connected\n");
+	
+	return sockfd;
+}
+
+int fetch_xml(char *host, int port, char **dest)
+{
+	int sockfd;
+	sockfd = gmetad_connect(host, port);
+	if (sockfd < 0) {
+		return sockfd;
+	}
 
 	int ret, offset = 0;
 
