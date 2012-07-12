@@ -29,6 +29,8 @@ struct {
         char cachepath[4096];
         char cachename[256];
 
+	char short_name; // bool
+
 	char warning[64];
 	char critical[64];
 
@@ -519,6 +521,7 @@ int get_config(int argc, char *argv[])
 	config.host[0] = '\0';
 	config.metric[0] = '\0';
 	config.heartbeat = -1;
+	config.short_name = 0;
 
 	// get command line options
 	static struct option long_options[] = {
@@ -530,12 +533,13 @@ int get_config(int argc, char *argv[])
         	{"metric_name",   required_argument, 0, 'm' },
 		{"heartbeat",     required_argument, 0, 'h' },
 		{"verbose",       no_argument,       0, 'v' },
+		{"short_name",    no_argument,       0, 's' },
         	{0,               0,                 0,  0  }
         };
 
 	while (1) {
 		int option_index = 0;
-		c = getopt_long(argc, argv, "vf:w:c:m:a:d:h:", long_options, &option_index);
+		c = getopt_long(argc, argv, "svf:w:c:m:a:d:h:", long_options, &option_index);
 	        if (c == -1)
 			break;
 
@@ -568,8 +572,15 @@ int get_config(int argc, char *argv[])
 			case 'm':
 				strcpy(config.metric, optarg);
 				break;
+
 			case 'h':
 				config.heartbeat = strtol(optarg, NULL, 10);
+				break;
+
+			case 's':
+				config.short_name = 1;
+				break;
+
 		        case '?':
 		            break;
 	        }
@@ -612,6 +623,33 @@ void backoff(float base)
 	nanosleep(&b, NULL);
 }
 
+int locate_hostfile (char *hostfile)
+{
+	struct stat f;
+
+	if (stat(hostfile, &f) == 0) {
+		return 0;
+	}
+
+	if (config.short_name) {
+		char *host = malloc(strlen(config.host) + 1);
+		strcpy(host, config.host);
+		strtok(host, ".");
+
+		int hostfile_len = strlen(config.cachepath) + strlen(host) + 2;
+		hostfile = realloc(hostfile, hostfile_len);
+		snprintf(hostfile, hostfile_len, "%s/%s", config.cachepath, host);
+
+		free(host);
+	}
+
+	if (stat(hostfile, &f) == 0) {
+		return 0;
+	}
+
+	return -1; // ultimately not found
+}
+
 int main(int argc, char *argv[])
 {
 	int retc = 0;
@@ -639,8 +677,8 @@ int main(int argc, char *argv[])
 	int hostfile_len = strlen(config.cachepath) + strlen(config.host) + 2;
 	int cachefile_len = strlen(config.cachepath) + strlen(config.cachename) + 2;
 
-	hostfile = calloc(hostfile_len, sizeof(char));
-	cachefile = calloc(cachefile_len, sizeof(char));
+	hostfile = malloc(hostfile_len);
+	cachefile = malloc(cachefile_len);
 
 	snprintf(hostfile, hostfile_len, "%s/%s", config.cachepath, config.host);
 	snprintf(cachefile, cachefile_len, "%s/%s", config.cachepath, config.cachename);
@@ -710,6 +748,14 @@ retry:
 
 	if (config.heartbeat > 0) {
 		strcpy(config.metric, "#REPORTED");
+	}
+
+	ret = locate_hostfile(hostfile);
+
+	if (ret < 0) {
+		printf("CRITICAL - Unable to locate cache file for %s\n", config.host);
+		retc = 2;
+		goto cleanup;
 	}
 
 	debug("Fetching %s metric from cache at %s\n", config.metric, hostfile);
