@@ -641,10 +641,10 @@ int locate_hostfile (char *hostfile)
 		snprintf(hostfile, hostfile_len, "%s/%s", config.cachepath, host);
 
 		free(host);
-	}
 
-	if (stat(hostfile, &f) == 0) {
-		return 0;
+		if (stat(hostfile, &f) == 0) {
+			return 0;
+		}
 	}
 
 	return -1; // ultimately not found
