@@ -340,9 +340,16 @@ int parse_xml_to_cache(char *xml, int xlen, char *cachepath, char *cachefile)
 					for (node3 = node2->children; node3; node3 = node3->next) {
                		                        if (node3->type == XML_ELEMENT_NODE && strcmp((const char *) node3->name, "HOST") == 0) {
 							host = (char *) xmlGetProp(node3, (const xmlChar *) "NAME");
+							if (config.short_name) {
+								host = get_shortname(host);
+							}
+
        	                	                        debug("\t\tFound new host: %s\n", host);
 
 							sprintf(filenamebuf, "%s/%s/%s/%s", cachepath, grid, cluster, host);
+							if (config.short_name) {
+								free(host);
+							}
 							if (ret < 0) {
 				                                retc = -1;
 				                                goto cleanup;
