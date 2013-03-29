@@ -42,6 +42,15 @@ struct {
 
 static void debug(const char *fmt, ...);
 
+char *get_shortname(const char *longname) {
+	char *shortname = malloc(strlen(longname) + 1);
+
+	strcpy(shortname, longname);
+	strtok(shortname, ".");
+
+	return shortname;
+}
+
 /*
  * Create global cache file
  */
@@ -632,9 +641,7 @@ int locate_hostfile (char *hostfile)
 	}
 
 	if (config.short_name) {
-		char *host = malloc(strlen(config.host) + 1);
-		strcpy(host, config.host);
-		strtok(host, ".");
+		char *host = get_shortname(config.host);
 
 		int hostfile_len = strlen(config.cachepath) + strlen(host) + 2;
 		hostfile = realloc(hostfile, hostfile_len);
