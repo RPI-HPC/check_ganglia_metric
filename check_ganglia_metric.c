@@ -550,12 +550,13 @@ int get_config(int argc, char *argv[])
 		{"heartbeat",     required_argument, 0, 'h' },
 		{"verbose",       no_argument,       0, 'v' },
 		{"short_name",    no_argument,       0, 's' },
+		{"max_age",       required_argument, 0, 'x' },
         	{0,               0,                 0,  0  }
         };
 
 	while (1) {
 		int option_index = 0;
-		c = getopt_long(argc, argv, "svf:w:c:m:a:d:h:", long_options, &option_index);
+		c = getopt_long(argc, argv, "svf:w:c:m:a:d:h:x:", long_options, &option_index);
 	        if (c == -1)
 			break;
 
@@ -595,6 +596,10 @@ int get_config(int argc, char *argv[])
 
 			case 's':
 				config.short_name = 1;
+				break;
+
+			case 'x':
+				config.max_age = strtol(optarg, NULL, 10);
 				break;
 
 		        case '?':
@@ -710,9 +715,11 @@ retry:
 		retc = 2;
 		goto cleanup;
 	}
-	debug("Cache age is %d\n", ret);
 
-	if (ret >= config.max_age) {
+	if (ret < config.max_age) {
+		debug("Cache age is %d\n", ret);
+	} else {
+		debug("Cache age greater than configured max (%d >= %d)\n", ret, config.max_age);
 		debug("Connecting to %s on port %d\n", config.gmetad_host, config.gmetad_port);
 		ret = fetch_xml(config.gmetad_host, config.gmetad_port, &xml);
 		if (ret < 0) {
