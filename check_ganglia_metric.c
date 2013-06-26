@@ -527,17 +527,17 @@ static int get_config(int argc, char *argv[])
 
 	// get command line options
 	static struct option long_options[] = {
-		{"cache_path",    required_argument, 0, 'f'},
-		{"gmetad_host",   required_argument, 0, 'd' },
-		{"warning",       required_argument, 0, 'w' },
-		{"critical",      required_argument, 0, 'c' },
-		{"metric_host",   required_argument, 0, 'a' },
-		{"metric_name",   required_argument, 0, 'm' },
-		{"heartbeat",     required_argument, 0, 'h' },
-		{"verbose",       no_argument,       0, 'v' },
-		{"short_name",    no_argument,       0, 's' },
-		{"max_age",       required_argument, 0, 'x' },
-		{0,	       0,		 0,  0  }
+		{"cache_path",    required_argument, NULL, 'f'},
+		{"gmetad_host",   required_argument, NULL, 'd' },
+		{"warning",       required_argument, NULL, 'w' },
+		{"critical",      required_argument, NULL, 'c' },
+		{"metric_host",   required_argument, NULL, 'a' },
+		{"metric_name",   required_argument, NULL, 'm' },
+		{"heartbeat",     required_argument, NULL, 'h' },
+		{"verbose",       no_argument,       NULL, 'v' },
+		{"short_name",    no_argument,       NULL, 's' },
+		{"max_age",       required_argument, NULL, 'x' },
+		{NULL,	       0,		 NULL,  0  }
 	};
 
 	while (1) {
