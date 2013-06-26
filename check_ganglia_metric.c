@@ -41,7 +41,19 @@ static struct {
 	int dump;
 } config;
 
-static void debug(const char *fmt, ...);
+/*
+ * Display a debug message is debugging is enabled
+ */
+
+static void debug(const char *fmt, ...)
+{
+	if (config.debug) {
+		va_list parg;
+		va_start(parg, fmt);
+		vprintf(fmt, parg);
+		va_end(parg);
+	}
+}
 
 /*
  * Get the shortname for a host
@@ -448,20 +460,6 @@ static int write_xml(const char *xml, int xlen, const char *xmlfile)
 	close(f);
 
 	return 0;
-}
-
-/*
- * Display a debug message is debugging is enabled
- */
-
-static void debug(const char *fmt, ...)
-{
-	if (config.debug) {
-		va_list parg;
-		va_start(parg, fmt);
-		vprintf(fmt, parg);
-		va_end(parg);
-	}
 }
 
 /*
