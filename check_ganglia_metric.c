@@ -667,8 +667,7 @@ int main(int argc, char *argv[])
 
 	int cachefd = -1;
 
-	ret = get_config(argc, argv);
-	if (ret < 0) {
+	if (get_config(argc, argv) < 0) {
 		retc = 2;
 		goto cleanup;
 	}
