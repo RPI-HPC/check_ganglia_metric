@@ -20,7 +20,7 @@
 #define CHUNK 1048576
 #define MINI_CHUNK 65536
 
-struct {
+static struct {
         int max_age;
         char metric[256];
         char host[256];
@@ -42,7 +42,7 @@ struct {
 
 static void debug(const char *fmt, ...);
 
-char *get_shortname(const char *longname) {
+static char *get_shortname(const char *longname) {
 	char *shortname = malloc(strlen(longname) + 1);
 
 	strcpy(shortname, longname);
@@ -55,7 +55,7 @@ char *get_shortname(const char *longname) {
  * Create global cache file
  */
 
-int create_cachefile(char *cachefile)
+static int create_cachefile(char *cachefile)
 {
 	int ret;
 	ret = creat(cachefile, S_IRUSR | S_IWUSR);
@@ -71,7 +71,7 @@ int create_cachefile(char *cachefile)
  * Check global cache file age
  */
 
-int check_cache_age(char *cachefile)
+static int check_cache_age(char *cachefile)
 {
         struct stat f;
         int ret;
@@ -93,7 +93,7 @@ int check_cache_age(char *cachefile)
  * Connect to gmetad
  */
 
-int gmetad_connect(char *host, int port)
+static int gmetad_connect(char *host, int port)
 {
 	int sockfd;
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -127,7 +127,7 @@ int gmetad_connect(char *host, int port)
  * Fetch XML from gmetad
  */
 
-int fetch_xml(char *host, int port, char **dest)
+static int fetch_xml(char *host, int port, char **dest)
 {
 	int sockfd;
 	sockfd = gmetad_connect(host, port);
@@ -186,7 +186,7 @@ int fetch_xml(char *host, int port, char **dest)
  * Ensure a path exists, create if it does not
  */
 
-int ensure_path(const char *path)
+static int ensure_path(const char *path)
 {
 	struct stat f;
 	int ret = stat(path, &f);
@@ -208,7 +208,7 @@ int ensure_path(const char *path)
  * Lock the global cache file
  */
 
-int get_cache_lock(char *cachefile, int *cachefd)
+static int get_cache_lock(char *cachefile, int *cachefd)
 {
 	int ret;
 
@@ -238,7 +238,7 @@ int get_cache_lock(char *cachefile, int *cachefd)
  * Release the lock on the global cache file
  */
 
-int release_cache_lock (char *cachefile, int *cachefd)
+static int release_cache_lock (char *cachefile, int *cachefd)
 {
 	int ret;
 
@@ -270,7 +270,7 @@ int release_cache_lock (char *cachefile, int *cachefd)
  * Parse the XML out to per-host cache files
  */
 
-int parse_xml_to_cache(char *xml, int xlen, char *cachepath, char *cachefile)
+static int parse_xml_to_cache(char *xml, int xlen, char *cachepath, char *cachefile)
 {
 	int retc = 0;
 
@@ -401,7 +401,7 @@ cleanup:
  * Retrieve a value from a per-host cache file
  */
 
-int fetch_value_from_cache(char *hostfile, char *metric, char *result, char *units)
+static int fetch_value_from_cache(char *hostfile, char *metric, char *result, char *units)
 {
 	int retc = 0;
 	FILE *f;
@@ -437,7 +437,7 @@ int fetch_value_from_cache(char *hostfile, char *metric, char *result, char *uni
  * Write XML out to a file
  */
 
-int write_xml(char *xml, int xlen, char *xmlfile)
+static int write_xml(char *xml, int xlen, char *xmlfile)
 {
 	int f;
 	f = open(xmlfile, O_WRONLY);
@@ -520,7 +520,7 @@ static int threshold_check(char *threshold, char *value)
  * Read command-line options and build a runtime configuration
  */
 
-int get_config(int argc, char *argv[])
+static int get_config(int argc, char *argv[])
 {
 	int c;
 
@@ -624,7 +624,7 @@ int get_config(int argc, char *argv[])
  * Backoff timer for global cache file lock collisions
  */
 
-void backoff(float base)
+static void backoff(float base)
 {
         float f = 1.0 / RAND_MAX;
 
@@ -644,7 +644,7 @@ void backoff(float base)
 	nanosleep(&b, NULL);
 }
 
-int locate_hostfile (char *hostfile)
+static int locate_hostfile (char *hostfile)
 {
 	struct stat f;
 
