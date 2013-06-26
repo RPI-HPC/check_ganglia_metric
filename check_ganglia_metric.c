@@ -277,7 +277,7 @@ static int release_cache_lock (const char *cachefile, int *cachefd)
 static int parse_xml_to_cache(const char *xml, int xlen,
 			      const char *cachepath, const char *cachefile)
 {
-	int retc = 0;
+	int retc = -1;
 
 	int ret;
 
@@ -299,7 +299,6 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 		printf("Error parsing #%d (%d,%d)\n",
 		       pErr->code, pErr->line,pErr->int2);
 
-		retc = -1;
 		goto cleanup;
 	}
 
@@ -307,7 +306,6 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 
 	xmlNode *node, *node2, *node3, *node4 = NULL;
 	if (strcmp((char *) root->name, "GANGLIA_XML") != 0) {
-		retc = -1;
 		goto cleanup;
 	}
 
@@ -327,7 +325,6 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 			snprintf(filenamebuf, PATH_MAX, "%s/%s", cachepath, grid);
 			ret = ensure_path(filenamebuf);
 			if (ret < 0) {
-				retc = -1;
 				goto cleanup;
 			}
 
@@ -339,7 +336,6 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 					snprintf(filenamebuf, PATH_MAX, "%s/%s/%s", cachepath, grid, cluster);
 					ret = ensure_path(filenamebuf);
 					if (ret < 0) {
-						retc = -1;
 						goto cleanup;
 					}
 
@@ -360,7 +356,6 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 							free(host);
 						}
 						if (ret < 0) {
-							retc = -1;
 							goto cleanup;
 						}
 
@@ -368,7 +363,6 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 
 						f = fopen(filenamebuf, "w");
 						if (f == NULL) {
-							retc = -1;
 							goto cleanup;
 						}
 
@@ -398,6 +392,8 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 			}
 		}
 	}
+
+	retc = 0;
 
 cleanup:
 	xmlFreeDoc(doc);
