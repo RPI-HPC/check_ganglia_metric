@@ -373,16 +373,18 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 							fprintf(f, "#REPORTED, ,%s\n", value);
 
 							for (node4 = node3->children; node4; node4 = node4->next) {
-								if (node4->type == XML_ELEMENT_NODE && strcmp((const char *) node4->name, "METRIC") == 0) {
-									name = (char *) xmlGetProp(node4, (const xmlChar *) "NAME");
-									units = (char *) xmlGetProp(node4, (const xmlChar *) "UNITS");
-									value = (char *) xmlGetProp(node4, (const xmlChar *) "VAL");
-
-									debug("\t\t\tFound new metric: %s\n", name);
-
-									fprintf(f, "%s,%s,%s\n", name, units, value);
-									count++;
+								if (node4->type != XML_ELEMENT_NODE || strcmp((const char *) node4->name, "METRIC") != 0) {
+									continue; /* skip non-element and non-metric nodes */
 								}
+
+								name = (char *) xmlGetProp(node4, (const xmlChar *) "NAME");
+								units = (char *) xmlGetProp(node4, (const xmlChar *) "UNITS");
+								value = (char *) xmlGetProp(node4, (const xmlChar *) "VAL");
+
+								debug("\t\t\tFound new metric: %s\n", name);
+
+								fprintf(f, "%s,%s,%s\n", name, units, value);
+								count++;
 							}
 
 							fclose(f);
