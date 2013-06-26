@@ -271,6 +271,16 @@ static int release_cache_lock (const char *cachefile, int *cachefd)
 }
 
 /*
+ * Determine if XML node name matches given name
+ */
+
+static int is_element(xmlNode *node, const char *name)
+{
+	return (node->type == XML_ELEMENT_NODE &&
+		strcmp((const char *) node->name, name) == 0);
+}
+
+/*
  * Parse the XML out to per-host cache files
  */
 
@@ -318,9 +328,8 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 	int count;
 
 	for (node = root->children; node; node = node->next) {
-		if (node->type != XML_ELEMENT_NODE || strcmp((const char *) node->name, "GRID") != 0) {
+		if (!is_element(node, "GRID"))
 			continue; /* skip non-element and non-cluster nodes */
-		}
 
 		grid = (char *) xmlGetProp(node, (const xmlChar *) "NAME");
 		debug("Found new grid: %s\n", grid);
@@ -332,9 +341,8 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 		}
 
 		for (node2 = node->children; node2; node2 = node2->next) {
-			if (node2->type != XML_ELEMENT_NODE || strcmp((const char *) node2->name, "CLUSTER") != 0) {
+			if (!is_element(node2, "CLUSTER"))
 				continue; /* skip non-element and non-cluster nodes */
-			}
 
 			cluster = (char *) xmlGetProp(node2, (const xmlChar *) "NAME");
 			debug("\tFound new cluster: %s\n", cluster);
@@ -346,9 +354,8 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 			}
 
 			for (node3 = node2->children; node3; node3 = node3->next) {
-				if (node3->type != XML_ELEMENT_NODE || strcmp((const char *) node3->name, "HOST") != 0) {
+				if (!is_element(node3, "HOST"))
 					continue; /* skip non-element and non-host nodes */
-				}
 
 				host = (char *) xmlGetProp(node3, (const xmlChar *) "NAME");
 				if (config.short_name) {
@@ -376,9 +383,8 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 				fprintf(f, "#REPORTED, ,%s\n", value);
 
 				for (node4 = node3->children; node4; node4 = node4->next) {
-					if (node4->type != XML_ELEMENT_NODE || strcmp((const char *) node4->name, "METRIC") != 0) {
+					if (!is_element(node4, "METRIC"))
 						continue; /* skip non-element and non-metric nodes */
-					}
 
 					name = (char *) xmlGetProp(node4, (const xmlChar *) "NAME");
 					units = (char *) xmlGetProp(node4, (const xmlChar *) "UNITS");
