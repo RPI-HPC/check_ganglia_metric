@@ -29,7 +29,7 @@ static struct {
 	char cachepath[4096];
 	char cachename[256];
 
-	char short_name; // bool
+	char short_name; /* bool */
 
 	char warning[64];
 	char critical[64];
@@ -231,9 +231,9 @@ static int release_cache_lock (const char *cachefile, int *cachefd)
 {
 	struct flock l;
 
-	// touch global cache
+	/* touch global cache */
 	if (utimes(cachefile, NULL) < 0) {
-		// TODO: probably not fatal ?
+		/* TODO: probably not fatal ? */
 	}
 
 	l.l_type = F_UNLCK;
@@ -243,7 +243,7 @@ static int release_cache_lock (const char *cachefile, int *cachefd)
 
 	if (fcntl(*cachefd, F_SETLK, &l) < 0) {
 		printf("Failed to remove lock\n");
-		// TODO: will this be fatal ?
+		/* TODO: will this be fatal ? */
 	}
 
 	close(*cachefd);
@@ -265,7 +265,7 @@ static int parse_xml_to_cache(const char *xml, int xlen, const char *cachepath, 
 	xmlDoc *doc = NULL;
 	xmlNode *root = NULL;
 
-	// suggested ABI check
+	/* suggested ABI check */
 	LIBXML_TEST_VERSION
 
 	doc = xmlReadMemory(xml, xlen, "xml", NULL, 0);
@@ -399,7 +399,7 @@ static int fetch_value_from_cache(const char *hostfile, const char *metric, char
 
 	char buf[256];
 	while (fgets(buf, 256, f) != NULL) {
-		// stip newline
+		/* stip newline */
 		buf[strlen(buf) - 1] = '\0';
 
 		char *pch;
@@ -510,7 +510,7 @@ static int get_config(int argc, char *argv[])
 {
 	int c;
 
-	// set defaults for optional params
+	/* set defaults for optional params */
 	config.max_age = 120;
 	strcpy(config.gmetad_host, "localhost");
 	config.gmetad_port = 8651;
@@ -525,7 +525,7 @@ static int get_config(int argc, char *argv[])
 	config.heartbeat = -1;
 	config.short_name = 0;
 
-	// get command line options
+	/* command line options */
 	static struct option long_options[] = {
 		{"cache_path",    required_argument, NULL, 'f'},
 		{"gmetad_host",   required_argument, NULL, 'd' },
@@ -652,7 +652,7 @@ static int locate_hostfile (char *hostfile)
 		}
 	}
 
-	return -1; // ultimately not found
+	return -1; /* ultimately not found */
 }
 
 int main(int argc, char *argv[])
