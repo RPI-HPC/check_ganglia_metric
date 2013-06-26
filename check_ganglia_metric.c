@@ -15,6 +15,7 @@
 #include <math.h>
 #include <sys/time.h>
 #include <getopt.h>
+#include <limits.h>
 
 #define MAX_RETRY 4
 #define CHUNK 1048576
@@ -295,7 +296,7 @@ static int parse_xml_to_cache(const char *xml, int xlen, const char *cachepath, 
 
 	FILE *f;
 
-	char filenamebuf[4096];
+	char filenamebuf[PATH_MAX];
 
 	int count;
 
@@ -304,7 +305,7 @@ static int parse_xml_to_cache(const char *xml, int xlen, const char *cachepath, 
 			grid = (char *) xmlGetProp(node, (const xmlChar *) "NAME");
 			debug("Found new grid: %s\n", grid);
 
-			sprintf(filenamebuf, "%s/%s", cachepath, grid);
+			snprintf(filenamebuf, PATH_MAX, "%s/%s", cachepath, grid);
 			ret = ensure_path(filenamebuf);
 			if (ret < 0) {
 				retc = -1;
@@ -316,7 +317,7 @@ static int parse_xml_to_cache(const char *xml, int xlen, const char *cachepath, 
 					cluster = (char *) xmlGetProp(node2, (const xmlChar *) "NAME");
 					debug("\tFound new cluster: %s\n", cluster);
 
-					sprintf(filenamebuf, "%s/%s/%s", cachepath, grid, cluster);
+					snprintf(filenamebuf, PATH_MAX, "%s/%s/%s", cachepath, grid, cluster);
 					ret = ensure_path(filenamebuf);
 					if (ret < 0) {
 						retc = -1;
@@ -332,7 +333,7 @@ static int parse_xml_to_cache(const char *xml, int xlen, const char *cachepath, 
 
 							debug("\t\tFound new host: %s\n", host);
 
-							sprintf(filenamebuf, "%s/%s/%s/%s", cachepath, grid, cluster, host);
+							snprintf(filenamebuf, PATH_MAX, "%s/%s/%s/%s", cachepath, grid, cluster, host);
 							if (config.short_name) {
 								free(host);
 							}
