@@ -1,2 +1,7 @@
+CC ?= cc
+
+ALL_CFLAGS := $(CFLAGS) $(shell xml2-config --cflags)
+ALL_LDFLAGS := $(LDFLAGS) -lrt $(shell xml2-config --libs)
+
 all:
-	gcc -O2 -Wall check_ganglia_metric.c `xml2-config --cflags` -o check_ganglia_metric `xml2-config --libs` -lrt
+	$(CC) $(ALL_CFLAGS) -O2 -Wall check_ganglia_metric.c -o check_ganglia_metric $(ALL_LDFLAGS)
