@@ -43,6 +43,10 @@ static struct {
 
 static void debug(const char *fmt, ...);
 
+/*
+ * Get the shortname for a host
+ */
+
 static char *get_shortname(const char *longname) {
 	char *shortname = malloc(strlen(longname) + 1);
 
