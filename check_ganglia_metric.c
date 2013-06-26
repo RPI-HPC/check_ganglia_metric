@@ -189,19 +189,14 @@ static int fetch_xml(char *host, int port, char **dest)
 static int ensure_path(const char *path)
 {
 	struct stat f;
-	int ret = stat(path, &f);
-	if (ret < 0) {
-		if (errno == ENOENT) {
-			ret = mkdir(path, S_IRWXU | S_IXOTH | S_IXGRP | S_IROTH | S_IRGRP);
-			if (ret < 0) {
-				return -1;
-			}
-		} else {
-			return -1;
-		}
-	}
 
-	return 0;
+	if (stat(path, &f) == 0)
+		return 0;
+
+	if (errno != ENOENT)
+		return -1;
+
+	return mkdir(path, S_IRWXU | S_IXOTH | S_IXGRP | S_IROTH | S_IRGRP);
 }
 
 /*
