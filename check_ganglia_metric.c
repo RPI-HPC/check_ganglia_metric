@@ -171,7 +171,8 @@ static int fetch_xml(const char *host, int port, char **dest)
 
 	offset += ret;
 
-	debug("Receive used approx %d kB of %d kB allocated.\n", offset / 1024, buffer_size / 1024);
+	debug("Receive used approx %d kB of %d kB allocated.\n",
+	      offset / 1024, buffer_size / 1024);
 
 	*dest = buffer;
 
@@ -257,7 +258,8 @@ static int release_cache_lock (const char *cachefile, int *cachefd)
  * Parse the XML out to per-host cache files
  */
 
-static int parse_xml_to_cache(const char *xml, int xlen, const char *cachepath, const char *cachefile)
+static int parse_xml_to_cache(const char *xml, int xlen,
+			      const char *cachepath, const char *cachefile)
 {
 	int retc = 0;
 
@@ -278,7 +280,8 @@ static int parse_xml_to_cache(const char *xml, int xlen, const char *cachepath, 
 			exit(100);
 		}
 
-		printf("Error parsing #%d (%d,%d)\n", pErr->code, pErr->line,pErr->int2);
+		printf("Error parsing #%d (%d,%d)\n",
+		       pErr->code, pErr->line,pErr->int2);
 
 		retc = -1;
 		goto cleanup;
@@ -388,7 +391,8 @@ cleanup:
  * Retrieve a value from a per-host cache file
  */
 
-static int fetch_value_from_cache(const char *hostfile, const char *metric, char *result, char *units)
+static int fetch_value_from_cache(const char *hostfile, const char *metric,
+				  char *result, char *units)
 {
 	int retc = 0;
 	FILE *f;
@@ -543,7 +547,8 @@ static int get_config(int argc, char *argv[])
 
 	while (1) {
 		int option_index = 0;
-		c = getopt_long(argc, argv, "svf:w:c:m:a:d:h:x:", long_options, &option_index);
+		c = getopt_long(argc, argv, "svf:w:c:m:a:d:h:x:",
+				long_options, &option_index);
 		if (c == -1)
 			break;
 
@@ -682,9 +687,11 @@ int main(int argc, char *argv[])
 	}
 
 	if (config.heartbeat > 0) {
-		debug("Checking heartbeat for %s with threshold %d\n", config.host, config.heartbeat);
+		debug("Checking heartbeat for %s with threshold %d\n",
+		      config.host, config.heartbeat);
 	} else {
-		debug("Checking %s for %s metric\n", config.host, config.metric);
+		debug("Checking %s for %s metric\n",
+		      config.host, config.metric);
 	}
 
 	hostfile = get_full_cache_path(config.cachepath, config.host);
