@@ -655,6 +655,14 @@ static int locate_hostfile (char *hostfile)
 	return -1; /* ultimately not found */
 }
 
+static char *get_full_cache_path(const char *cachepath, const char *file)
+{
+	int len = strlen(cachepath) + strlen(file) + 2;
+	char *fullpath = malloc(len);
+	snprintf(fullpath, len, "%s/%s", cachepath, file);
+	return fullpath;
+}
+
 int main(int argc, char *argv[])
 {
 	int retc = 0;
@@ -678,14 +686,8 @@ int main(int argc, char *argv[])
 		debug("Checking %s for %s metric\n", config.host, config.metric);
 	}
 
-	int hostfile_len = strlen(config.cachepath) + strlen(config.host) + 2;
-	int cachefile_len = strlen(config.cachepath) + strlen(config.cachename) + 2;
-
-	hostfile = malloc(hostfile_len);
-	cachefile = malloc(cachefile_len);
-
-	snprintf(hostfile, hostfile_len, "%s/%s", config.cachepath, config.host);
-	snprintf(cachefile, cachefile_len, "%s/%s", config.cachepath, config.cachename);
+	hostfile = get_full_cache_path(config.cachepath, config.host);
+	cachefile = get_full_cache_path(config.cachepath, config.cachename);
 
 	char value[64];
 	char units[64];
