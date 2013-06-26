@@ -271,6 +271,15 @@ static int release_cache_lock (const char *cachefile, int *cachefd)
 }
 
 /*
+ * Get named property from XML node
+ */
+
+static char *get_prop(xmlNode *node, const char *property)
+{
+	return (char *) xmlGetProp(node, (const xmlChar *) property);
+}
+
+/*
  * Determine if XML node name matches given name
  */
 
@@ -331,7 +340,7 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 		if (!is_element(node, "GRID"))
 			continue; /* skip non-element and non-cluster nodes */
 
-		grid = (char *) xmlGetProp(node, (const xmlChar *) "NAME");
+		grid = get_prop(node, "NAME");
 		debug("Found new grid: %s\n", grid);
 
 		snprintf(filenamebuf, PATH_MAX, "%s/%s", cachepath, grid);
@@ -344,7 +353,7 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 			if (!is_element(node2, "CLUSTER"))
 				continue; /* skip non-element and non-cluster nodes */
 
-			cluster = (char *) xmlGetProp(node2, (const xmlChar *) "NAME");
+			cluster = get_prop(node2, "NAME");
 			debug("\tFound new cluster: %s\n", cluster);
 
 			snprintf(filenamebuf, PATH_MAX, "%s/%s/%s", cachepath, grid, cluster);
@@ -357,7 +366,7 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 				if (!is_element(node3, "HOST"))
 					continue; /* skip non-element and non-host nodes */
 
-				host = (char *) xmlGetProp(node3, (const xmlChar *) "NAME");
+				host = get_prop(node3, "NAME");
 				if (config.short_name) {
 					host = get_shortname(host);
 				}
@@ -379,16 +388,16 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 					goto cleanup;
 				}
 
-				value = (char *) xmlGetProp(node3, (const xmlChar *) "REPORTED");
+				value = get_prop(node3, "REPORTED");
 				fprintf(f, "#REPORTED, ,%s\n", value);
 
 				for (node4 = node3->children; node4; node4 = node4->next) {
 					if (!is_element(node4, "METRIC"))
 						continue; /* skip non-element and non-metric nodes */
 
-					name = (char *) xmlGetProp(node4, (const xmlChar *) "NAME");
-					units = (char *) xmlGetProp(node4, (const xmlChar *) "UNITS");
-					value = (char *) xmlGetProp(node4, (const xmlChar *) "VAL");
+					name = get_prop(node4, "NAME");
+					units = get_prop(node4, "UNITS");
+					value = get_prop(node4, "VAL");
 
 					debug("\t\t\tFound new metric: %s\n", name);
 
