@@ -205,7 +205,7 @@ static int ensure_path(const char *path)
 
 static int get_cache_lock(char *cachefile, int *cachefd)
 {
-	int ret;
+	struct flock l;
 
 	if (*cachefd < 0) {
 		*cachefd = open(cachefile, O_RDWR);
@@ -215,16 +215,13 @@ static int get_cache_lock(char *cachefile, int *cachefd)
 		}
 	}
 
-	struct flock l;
 	l.l_type = F_WRLCK;
 	l.l_whence = SEEK_SET;
 	l.l_start = 0;
 	l.l_len = 0;
 
-	ret = fcntl(*cachefd, F_SETLK, &l);
-	if (ret < 0) {
+	if (fcntl(*cachefd, F_SETLK, &l) < 0)
 		return -1;
-	}
 
 	return 0;
 }
@@ -235,22 +232,19 @@ static int get_cache_lock(char *cachefile, int *cachefd)
 
 static int release_cache_lock (char *cachefile, int *cachefd)
 {
-	int ret;
+	struct flock l;
 
 	// touch global cache
-	ret = utimes(cachefile, NULL);
-	if (ret < 0) {
+	if (utimes(cachefile, NULL) < 0) {
 		// TODO: probably not fatal ?
 	}
 
-	struct flock l;
 	l.l_type = F_UNLCK;
 	l.l_whence = SEEK_SET;
 	l.l_start = 0;
 	l.l_len = 0;
 
-	ret = fcntl(*cachefd, F_SETLK, &l);
-	if (ret < 0) {
+	if (fcntl(*cachefd, F_SETLK, &l) < 0) {
 		printf("Failed to remove lock\n");
 		// TODO: will this be fatal ?
 	}
