@@ -21,13 +21,13 @@
 #define MINI_CHUNK 65536
 
 static struct {
-        int max_age;
-        char metric[256];
-        char host[256];
-        char gmetad_host[256];
-        int gmetad_port;
-        char cachepath[4096];
-        char cachename[256];
+	int max_age;
+	char metric[256];
+	char host[256];
+	char gmetad_host[256];
+	int gmetad_port;
+	char cachepath[4096];
+	char cachename[256];
 
 	char short_name; // bool
 
@@ -73,20 +73,20 @@ static int create_cachefile(char *cachefile)
 
 static int check_cache_age(char *cachefile)
 {
-        struct stat f;
-        int ret;
+	struct stat f;
+	int ret;
 
-        ret = stat(cachefile, &f);
-        if (ret < 0) {
+	ret = stat(cachefile, &f);
+	if (ret < 0) {
 		if (errno == ENOENT) {
 			return create_cachefile(cachefile);
 		} else {
 			debug("DEBUG: Unable to stat cache file.\n");
-	                return -1;
+			return -1;
 		}
 	}
 
-        return time(NULL) - f.st_mtime;
+	return time(NULL) - f.st_mtime;
 }
 
 /*
@@ -208,23 +208,23 @@ static int get_cache_lock(char *cachefile, int *cachefd)
 	int ret;
 
 	if (*cachefd < 0) {
-	        *cachefd = open(cachefile, O_RDWR);
-        	if (*cachefd < 0) {
-                	printf("Unable to get cache FD\n");
-	                return -1;
-	        }
+		*cachefd = open(cachefile, O_RDWR);
+		if (*cachefd < 0) {
+			printf("Unable to get cache FD\n");
+			return -1;
+		}
 	}
 
-        struct flock l;
-        l.l_type = F_WRLCK;
-        l.l_whence = SEEK_SET;
-        l.l_start = 0;
-        l.l_len = 0;
+	struct flock l;
+	l.l_type = F_WRLCK;
+	l.l_whence = SEEK_SET;
+	l.l_start = 0;
+	l.l_len = 0;
 
 	ret = fcntl(*cachefd, F_SETLK, &l);
-        if (ret < 0) {
-        	return -1;
-        }
+	if (ret < 0) {
+		return -1;
+	}
 
 	return 0;
 }
@@ -237,25 +237,25 @@ static int release_cache_lock (char *cachefile, int *cachefd)
 {
 	int ret;
 
-        // touch global cache
-        ret = utimes(cachefile, NULL);
-        if (ret < 0) {
-                // TODO: probably not fatal ?
-        }
+	// touch global cache
+	ret = utimes(cachefile, NULL);
+	if (ret < 0) {
+		// TODO: probably not fatal ?
+	}
 
 	struct flock l;
-        l.l_type = F_UNLCK;
-        l.l_whence = SEEK_SET;
-        l.l_start = 0;
-        l.l_len = 0;
+	l.l_type = F_UNLCK;
+	l.l_whence = SEEK_SET;
+	l.l_start = 0;
+	l.l_len = 0;
 
-        ret = fcntl(*cachefd, F_SETLK, &l);
-        if (ret < 0) {
-                printf("Failed to remove lock\n");
+	ret = fcntl(*cachefd, F_SETLK, &l);
+	if (ret < 0) {
+		printf("Failed to remove lock\n");
 		// TODO: will this be fatal ?
-        }
+	}
 
-        close(*cachefd);
+	close(*cachefd);
 	*cachefd = -1;
 
 	return 0;
@@ -311,7 +311,7 @@ static int parse_xml_to_cache(char *xml, int xlen, char *cachepath, char *cachef
 	for (node = root->children; node; node = node->next) {
 		if (node->type == XML_ELEMENT_NODE && strcmp((const char *) node->name, "GRID") == 0) {
 			grid = (char *) xmlGetProp(node, (const xmlChar *) "NAME");
-           		debug("Found new grid: %s\n", grid);
+			debug("Found new grid: %s\n", grid);
 
 			sprintf(filenamebuf, "%s/%s", cachepath, grid);
 			ret = ensure_path(filenamebuf);
@@ -328,27 +328,27 @@ static int parse_xml_to_cache(char *xml, int xlen, char *cachepath, char *cachef
 					sprintf(filenamebuf, "%s/%s/%s", cachepath, grid, cluster);
 					ret = ensure_path(filenamebuf);
 					if (ret < 0) {
-		                                retc = -1;
-                		                goto cleanup;
+						retc = -1;
+						goto cleanup;
 					}
 
 					for (node3 = node2->children; node3; node3 = node3->next) {
-               		                        if (node3->type == XML_ELEMENT_NODE && strcmp((const char *) node3->name, "HOST") == 0) {
+						if (node3->type == XML_ELEMENT_NODE && strcmp((const char *) node3->name, "HOST") == 0) {
 							host = (char *) xmlGetProp(node3, (const xmlChar *) "NAME");
 							if (config.short_name) {
 								host = get_shortname(host);
 							}
 
-       	                	                        debug("\t\tFound new host: %s\n", host);
+							debug("\t\tFound new host: %s\n", host);
 
 							sprintf(filenamebuf, "%s/%s/%s/%s", cachepath, grid, cluster, host);
 							if (config.short_name) {
 								free(host);
 							}
 							if (ret < 0) {
-				                                retc = -1;
-				                                goto cleanup;
-				                        }
+								retc = -1;
+								goto cleanup;
+							}
 
 							count = 0;
 
@@ -377,7 +377,7 @@ static int parse_xml_to_cache(char *xml, int xlen, char *cachepath, char *cachef
 							fclose(f);
 
 							debug("\t\t\tWrote %d metrics to %s\n", count, filenamebuf);
-                                        	}
+						}
 					}
 				}
 			}
@@ -503,7 +503,7 @@ static int threshold_check(char *threshold, char *value)
 		return (val >= val2 && val <= val3);
 	} else {
 		val2 = strtof(threshold, NULL);
-                val3 = strtof(colon + 1, NULL);
+		val3 = strtof(colon + 1, NULL);
 		debug("if %f < %f or %f > %f\n", val, val2, val, val3);
 		return (val < val2 || val > val3);
 	}
@@ -519,14 +519,14 @@ static int get_config(int argc, char *argv[])
 {
 	int c;
 
-        // set defaults for optional params
-        config.max_age = 120;
-        strcpy(config.gmetad_host, "localhost");
-        config.gmetad_port = 8651;
-        strcpy(config.cachepath, "/tmp");
-        strcpy(config.cachename, ".gm-cache");
-        config.debug = 0;
-        config.dump = 0;
+	// set defaults for optional params
+	config.max_age = 120;
+	strcpy(config.gmetad_host, "localhost");
+	config.gmetad_port = 8651;
+	strcpy(config.cachepath, "/tmp");
+	strcpy(config.cachename, ".gm-cache");
+	config.debug = 0;
+	config.dump = 0;
 	config.warning[0] = '\0';
 	config.critical[0] = '\0';
 	config.host[0] = '\0';
@@ -536,42 +536,42 @@ static int get_config(int argc, char *argv[])
 
 	// get command line options
 	static struct option long_options[] = {
-        	{"cache_path",    required_argument, 0, 'f'},
-        	{"gmetad_host",   required_argument, 0, 'd' },
-        	{"warning",       required_argument, 0, 'w' },
-        	{"critical",      required_argument, 0, 'c' },
-        	{"metric_host",   required_argument, 0, 'a' },
-        	{"metric_name",   required_argument, 0, 'm' },
+		{"cache_path",    required_argument, 0, 'f'},
+		{"gmetad_host",   required_argument, 0, 'd' },
+		{"warning",       required_argument, 0, 'w' },
+		{"critical",      required_argument, 0, 'c' },
+		{"metric_host",   required_argument, 0, 'a' },
+		{"metric_name",   required_argument, 0, 'm' },
 		{"heartbeat",     required_argument, 0, 'h' },
 		{"verbose",       no_argument,       0, 'v' },
 		{"short_name",    no_argument,       0, 's' },
 		{"max_age",       required_argument, 0, 'x' },
-        	{0,               0,                 0,  0  }
-        };
+		{0,	       0,		 0,  0  }
+	};
 
 	while (1) {
 		int option_index = 0;
 		c = getopt_long(argc, argv, "svf:w:c:m:a:d:h:x:", long_options, &option_index);
-	        if (c == -1)
+		if (c == -1)
 			break;
 
-	        switch (c) {
+		switch (c) {
 			case 'v':
 				config.debug = 1;
 				debug("Debugging enabled\n");
 				break;
 
-		        case 'w':
-		        	strcpy(config.warning, optarg);
-		        	break;
+			case 'w':
+				strcpy(config.warning, optarg);
+				break;
 
-		        case 'c':
-		        	strcpy(config.critical, optarg);
-		        	break;
+			case 'c':
+				strcpy(config.critical, optarg);
+				break;
 
-		        case 'f':
-		        	strcpy(config.cachepath, optarg);
-		        	break;
+			case 'f':
+				strcpy(config.cachepath, optarg);
+				break;
 
 			case 'd':
 				strcpy(config.gmetad_host, optarg);
@@ -597,9 +597,9 @@ static int get_config(int argc, char *argv[])
 				config.max_age = strtol(optarg, NULL, 10);
 				break;
 
-		        case '?':
-		            break;
-	        }
+			case '?':
+				break;
+		}
 	}
 
 	if (strcmp(config.host, "") == 0) {
@@ -621,18 +621,18 @@ static int get_config(int argc, char *argv[])
 
 static void backoff(float base)
 {
-        float f = 1.0 / RAND_MAX;
+	float f = 1.0 / RAND_MAX;
 
-        struct timespec t;
-        clock_gettime(CLOCK_MONOTONIC, &t);
+	struct timespec t;
+	clock_gettime(CLOCK_MONOTONIC, &t);
 
-        srandom(t.tv_nsec);
+	srandom(t.tv_nsec);
 
-        float r = base + 3 * (f * random());
+	float r = base + 3 * (f * random());
 
-        struct timespec b;
-        b.tv_sec = (int) r;
-        b.tv_nsec = 1000000000 * (r - b.tv_sec);
+	struct timespec b;
+	b.tv_sec = (int) r;
+	b.tv_nsec = 1000000000 * (r - b.tv_sec);
 
 	debug("Sleeping for %f seconds\n", r);
 
@@ -670,9 +670,9 @@ int main(int argc, char *argv[])
 	int ret;
 
 	char *hostfile = NULL;
-        char *cachefile = NULL;
+	char *cachefile = NULL;
 	char *xml = NULL;
-        char *xmlfile = NULL;
+	char *xmlfile = NULL;
 
 	int cachefd = -1;
 
@@ -741,8 +741,8 @@ retry:
 		if (ret2 < 0) {
 			if (retry_count == MAX_RETRY) {
 				printf("ERROR: Unable to get cache lock after retrying %d times. Stale lock?", retry_count);
-		                retc = 2;
-                		goto cleanup;
+				retc = 2;
+				goto cleanup;
 			} else {
 				backoff(retry_count / 2.0);
 			}
@@ -804,14 +804,14 @@ retry:
 
 	if (threshold_check(config.critical, value)) {
 		printf("CRITICAL - %s %s\n", value, units);
-                retc = 2;
+		retc = 2;
 	} else {
 		if (threshold_check(config.warning, value)) {
 			printf("WARNING - %s %s\n", value, units);
-                        retc = 1;
-                } else {
-                        printf("OK - %s %s\n", value, units);
-                }
+			retc = 1;
+		} else {
+			printf("OK - %s %s\n", value, units);
+		}
 	}
 
 cleanup:
