@@ -74,10 +74,8 @@ static int create_cachefile(char *cachefile)
 static int check_cache_age(char *cachefile)
 {
 	struct stat f;
-	int ret;
 
-	ret = stat(cachefile, &f);
-	if (ret < 0) {
+	if (stat(cachefile, &f) < 0) {
 		if (errno == ENOENT) {
 			return create_cachefile(cachefile);
 		} else {
