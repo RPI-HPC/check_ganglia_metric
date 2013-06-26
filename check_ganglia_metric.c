@@ -113,8 +113,7 @@ static int gmetad_connect(char *host, int port)
 	addr.sin_port = htons(port);
 
 	if (connect(sockfd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
-		// TODO: make errors more helpful
-		printf("Connection error: %d\n", errno);
+		printf("Connection error: %s (%d)\n", strerror(errno), errno);
 		return -3;
 	}
 
