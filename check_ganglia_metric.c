@@ -329,65 +329,67 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 			}
 
 			for (node2 = node->children; node2; node2 = node2->next) {
-				if (node2->type == XML_ELEMENT_NODE && strcmp((const char *) node2->name, "CLUSTER") == 0) {
-					cluster = (char *) xmlGetProp(node2, (const xmlChar *) "NAME");
-					debug("\tFound new cluster: %s\n", cluster);
+				if (node2->type != XML_ELEMENT_NODE || strcmp((const char *) node2->name, "CLUSTER") != 0) {
+					continue; /* skip non-element and non-cluster nodes */
+				}
 
-					snprintf(filenamebuf, PATH_MAX, "%s/%s/%s", cachepath, grid, cluster);
-					ret = ensure_path(filenamebuf);
+				cluster = (char *) xmlGetProp(node2, (const xmlChar *) "NAME");
+				debug("\tFound new cluster: %s\n", cluster);
+
+				snprintf(filenamebuf, PATH_MAX, "%s/%s/%s", cachepath, grid, cluster);
+				ret = ensure_path(filenamebuf);
+				if (ret < 0) {
+					goto cleanup;
+				}
+
+				for (node3 = node2->children; node3; node3 = node3->next) {
+					if (node3->type != XML_ELEMENT_NODE || strcmp((const char *) node3->name, "HOST") != 0) {
+						continue; /* skip non-element and non-host nodes */
+					}
+
+					host = (char *) xmlGetProp(node3, (const xmlChar *) "NAME");
+					if (config.short_name) {
+						host = get_shortname(host);
+					}
+
+					debug("\t\tFound new host: %s\n", host);
+
+					snprintf(filenamebuf, PATH_MAX, "%s/%s/%s/%s", cachepath, grid, cluster, host);
+					if (config.short_name) {
+						free(host);
+					}
 					if (ret < 0) {
 						goto cleanup;
 					}
 
-					for (node3 = node2->children; node3; node3 = node3->next) {
-						if (node3->type != XML_ELEMENT_NODE || strcmp((const char *) node3->name, "HOST") != 0) {
-							continue; /* skip non-element and non-host nodes */
-						}
+					count = 0;
 
-						host = (char *) xmlGetProp(node3, (const xmlChar *) "NAME");
-						if (config.short_name) {
-							host = get_shortname(host);
-						}
-
-						debug("\t\tFound new host: %s\n", host);
-
-						snprintf(filenamebuf, PATH_MAX, "%s/%s/%s/%s", cachepath, grid, cluster, host);
-						if (config.short_name) {
-							free(host);
-						}
-						if (ret < 0) {
-							goto cleanup;
-						}
-
-						count = 0;
-
-						f = fopen(filenamebuf, "w");
-						if (f == NULL) {
-							goto cleanup;
-						}
-
-						value = (char *) xmlGetProp(node3, (const xmlChar *) "REPORTED");
-						fprintf(f, "#REPORTED, ,%s\n", value);
-
-						for (node4 = node3->children; node4; node4 = node4->next) {
-							if (node4->type != XML_ELEMENT_NODE || strcmp((const char *) node4->name, "METRIC") != 0) {
-								continue; /* skip non-element and non-metric nodes */
-							}
-
-							name = (char *) xmlGetProp(node4, (const xmlChar *) "NAME");
-							units = (char *) xmlGetProp(node4, (const xmlChar *) "UNITS");
-							value = (char *) xmlGetProp(node4, (const xmlChar *) "VAL");
-
-							debug("\t\t\tFound new metric: %s\n", name);
-
-							fprintf(f, "%s,%s,%s\n", name, units, value);
-							count++;
-						}
-
-						fclose(f);
-
-						debug("\t\t\tWrote %d metrics to %s\n", count, filenamebuf);
+					f = fopen(filenamebuf, "w");
+					if (f == NULL) {
+						goto cleanup;
 					}
+
+					value = (char *) xmlGetProp(node3, (const xmlChar *) "REPORTED");
+					fprintf(f, "#REPORTED, ,%s\n", value);
+
+					for (node4 = node3->children; node4; node4 = node4->next) {
+						if (node4->type != XML_ELEMENT_NODE || strcmp((const char *) node4->name, "METRIC") != 0) {
+							continue; /* skip non-element and non-metric nodes */
+						}
+
+						name = (char *) xmlGetProp(node4, (const xmlChar *) "NAME");
+						units = (char *) xmlGetProp(node4, (const xmlChar *) "UNITS");
+						value = (char *) xmlGetProp(node4, (const xmlChar *) "VAL");
+
+						debug("\t\t\tFound new metric: %s\n", name);
+
+						fprintf(f, "%s,%s,%s\n", name, units, value);
+						count++;
+					}
+
+					fclose(f);
+
+					debug("\t\t\tWrote %d metrics to %s\n", count, filenamebuf);
 				}
 			}
 		}
