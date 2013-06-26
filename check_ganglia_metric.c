@@ -55,7 +55,7 @@ static char *get_shortname(const char *longname) {
  * Create global cache file
  */
 
-static int create_cachefile(char *cachefile)
+static int create_cachefile(const char *cachefile)
 {
 	int ret;
 	ret = creat(cachefile, S_IRUSR | S_IWUSR);
@@ -71,7 +71,7 @@ static int create_cachefile(char *cachefile)
  * Check global cache file age
  */
 
-static int check_cache_age(char *cachefile)
+static int check_cache_age(const char *cachefile)
 {
 	struct stat f;
 
@@ -91,7 +91,7 @@ static int check_cache_age(char *cachefile)
  * Connect to gmetad
  */
 
-static int gmetad_connect(char *host, int port)
+static int gmetad_connect(const char *host, int port)
 {
 	int sockfd;
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -124,7 +124,7 @@ static int gmetad_connect(char *host, int port)
  * Fetch XML from gmetad
  */
 
-static int fetch_xml(char *host, int port, char **dest)
+static int fetch_xml(const char *host, int port, char **dest)
 {
 	int sockfd;
 	sockfd = gmetad_connect(host, port);
@@ -200,7 +200,7 @@ static int ensure_path(const char *path)
  * Lock the global cache file
  */
 
-static int get_cache_lock(char *cachefile, int *cachefd)
+static int get_cache_lock(const char *cachefile, int *cachefd)
 {
 	struct flock l;
 
@@ -227,7 +227,7 @@ static int get_cache_lock(char *cachefile, int *cachefd)
  * Release the lock on the global cache file
  */
 
-static int release_cache_lock (char *cachefile, int *cachefd)
+static int release_cache_lock (const char *cachefile, int *cachefd)
 {
 	struct flock l;
 
@@ -256,7 +256,7 @@ static int release_cache_lock (char *cachefile, int *cachefd)
  * Parse the XML out to per-host cache files
  */
 
-static int parse_xml_to_cache(char *xml, int xlen, char *cachepath, char *cachefile)
+static int parse_xml_to_cache(const char *xml, int xlen, const char *cachepath, const char *cachefile)
 {
 	int retc = 0;
 
@@ -387,7 +387,7 @@ cleanup:
  * Retrieve a value from a per-host cache file
  */
 
-static int fetch_value_from_cache(char *hostfile, char *metric, char *result, char *units)
+static int fetch_value_from_cache(const char *hostfile, const char *metric, char *result, char *units)
 {
 	int retc = 0;
 	FILE *f;
@@ -423,7 +423,7 @@ static int fetch_value_from_cache(char *hostfile, char *metric, char *result, ch
  * Write XML out to a file
  */
 
-static int write_xml(char *xml, int xlen, char *xmlfile)
+static int write_xml(const char *xml, int xlen, const char *xmlfile)
 {
 	int f;
 	f = open(xmlfile, O_WRONLY);
