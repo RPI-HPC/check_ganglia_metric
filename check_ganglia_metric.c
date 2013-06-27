@@ -783,9 +783,7 @@ retry:
 		strcpy(config.metric, "#REPORTED");
 	}
 
-	ret = locate_hostfile(hostfile);
-
-	if (ret < 0) {
+	if (locate_hostfile(hostfile) < 0) {
 		printf("CRITICAL - Unable to locate cache file for %s\n", config.host);
 		retc = 2;
 		goto cleanup;
@@ -793,8 +791,7 @@ retry:
 
 	debug("Fetching %s metric from cache at %s\n", config.metric, hostfile);
 
-	ret = fetch_value_from_cache(hostfile, config.metric, (char *) &value, (char *) units);
-
+	ret = fetch_value_from_cache(hostfile, config.metric, value, units);
 	if (ret < 0) {
 		printf("CRITICAL - Unable to read cache at %s\n", hostfile);
 		retc = 2;
