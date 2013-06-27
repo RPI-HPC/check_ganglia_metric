@@ -337,6 +337,7 @@ static int parse_xml_tree_to_cache(xmlNode *root, const char *cachepath, const c
 				if (config.short_name) {
 					free(host);
 				}
+				ret = ensure_path(filenamebuf);
 				if (ret < 0)
 					return -1;
 
