@@ -249,17 +249,23 @@ static int get_cache_lock(const char *cachefile, int *cachefd)
 }
 
 /*
+ * Touch cache lock to indicate it has been updated
+ */
+
+static int touch_cache_lock (const char *cachefile)
+{
+	utimes(cachefile, NULL);
+
+	return 0;
+}
+
+/*
  * Release the lock on the global cache file
  */
 
 static int release_cache_lock (const char *cachefile, int *cachefd)
 {
 	struct flock l;
-
-	/* touch global cache */
-	if (utimes(cachefile, NULL) < 0) {
-		/* TODO: probably not fatal ? */
-	}
 
 	l.l_type = F_UNLCK;
 	l.l_whence = SEEK_SET;
@@ -776,6 +782,7 @@ retry:
 			goto cleanup;
 		}
 
+		touch_cache_lock(cachefile);
 		release_cache_lock(cachefile, &cachefd);
 	}
 
