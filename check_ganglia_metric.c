@@ -111,14 +111,14 @@ static int check_cache_age(const char *cachefile)
 static int gmetad_connect(const char *host, int port)
 {
 	int sockfd;
+	struct hostent *gmetad;
+	struct sockaddr_in addr;
+
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0)
 		return -1;
 
-	struct hostent *gmetad;
-	struct sockaddr_in addr;
 	gmetad = gethostbyname(host);
-
 	if (gmetad == NULL)
 		return -2;
 
@@ -144,18 +144,19 @@ static int gmetad_connect(const char *host, int port)
 static int fetch_xml(const char *host, int port, char **dest)
 {
 	int sockfd;
+	int ret, offset = 0;
+	int buffer_size = CHUNK;
+	char *buffer;
+	char *buffer2 = NULL;
+
 	sockfd = gmetad_connect(host, port);
 	if (sockfd < 0) {
 		return sockfd;
 	}
 
-	int ret, offset = 0;
-	int buffer_size = CHUNK;
+	buffer = malloc(buffer_size);
 
 	debug("%d kB chunk size\n", buffer_size / 1024);
-
-	char *buffer = malloc(buffer_size);
-	char *buffer2 = NULL;
 
 	debug("Fetching...\n");
 
@@ -425,18 +426,17 @@ static int fetch_value_from_cache(const char *hostfile, const char *metric,
 {
 	int retc = 0;
 	FILE *f;
+	char *pch;
+	char buf[256];
 
 	f = fopen(hostfile, "r");
-
 	if (f == NULL)
 		return -1;
 
-	char buf[256];
 	while (fgets(buf, 256, f) != NULL) {
 		/* stip newline */
 		buf[strlen(buf) - 1] = '\0';
 
-		char *pch;
 		pch = strtok (buf, ",");
 		if (strcmp(metric, pch) == 0) {
 			strcpy(units, strtok(NULL, ","));
@@ -460,12 +460,13 @@ static int fetch_value_from_cache(const char *hostfile, const char *metric,
 static int write_xml(const char *xml, int xlen, const char *xmlfile)
 {
 	int f;
-	f = open(xmlfile, O_WRONLY);
+	int ret;
 
+	f = open(xmlfile, O_WRONLY);
 	if (f < 0)
 		return -1;
 
-	int ret = write(f, xml, xlen);
+	ret = write(f, xml, xlen);
 	if (ret < 0 || ret < xlen) {
 		printf("Error: written %d bytes\n", ret);
 	}
@@ -481,16 +482,18 @@ static int write_xml(const char *xml, int xlen, const char *xmlfile)
 
 static int threshold_check(char *threshold, char *value)
 {
+	int length;
+	float val, val2, val3;
+	char *colon;
+
 	if (strcmp(threshold, "") == 0 || strcmp(value, "") == 0) {
 		return 0;
 	}
 
-	int length = strlen(threshold);
+	length = strlen(threshold);
+	val = strtof(value, NULL);
 
-	float val = strtof(value, NULL);
-	float val2, val3;
-
-	char *colon = strchr(threshold, ':');
+	colon = strchr(threshold, ':');
 	if (colon != NULL) {
 		*colon = '\0';
 	}
@@ -530,21 +533,6 @@ static int get_config(int argc, char *argv[])
 {
 	int c;
 
-	/* set defaults for optional params */
-	config.max_age = 120;
-	strcpy(config.gmetad_host, "localhost");
-	config.gmetad_port = 8651;
-	strcpy(config.cachepath, "/tmp");
-	strcpy(config.cachename, ".gm-cache");
-	config.debug = 0;
-	config.dump = 0;
-	config.warning[0] = '\0';
-	config.critical[0] = '\0';
-	config.host[0] = '\0';
-	config.metric[0] = '\0';
-	config.heartbeat = -1;
-	config.short_name = 0;
-
 	/* command line options */
 	static struct option long_options[] = {
 		{"cache_path",    required_argument, NULL, 'f'},
@@ -559,6 +547,21 @@ static int get_config(int argc, char *argv[])
 		{"max_age",       required_argument, NULL, 'x' },
 		{NULL,	       0,		 NULL,  0  }
 	};
+
+	/* set defaults for optional params */
+	config.max_age = 120;
+	strcpy(config.gmetad_host, "localhost");
+	config.gmetad_port = 8651;
+	strcpy(config.cachepath, "/tmp");
+	strcpy(config.cachename, ".gm-cache");
+	config.debug = 0;
+	config.dump = 0;
+	config.warning[0] = '\0';
+	config.critical[0] = '\0';
+	config.host[0] = '\0';
+	config.metric[0] = '\0';
+	config.heartbeat = -1;
+	config.short_name = 0;
 
 	while (1) {
 		int option_index = 0;
@@ -634,15 +637,15 @@ static int get_config(int argc, char *argv[])
 static void backoff(float base)
 {
 	float f = 1.0 / RAND_MAX;
-
+	float r;
 	struct timespec t;
-	clock_gettime(CLOCK_MONOTONIC, &t);
+	struct timespec b;
 
+	clock_gettime(CLOCK_MONOTONIC, &t);
 	srandom(t.tv_nsec);
 
-	float r = base + 3 * (f * random());
+	r = base + 3 * (f * random());
 
-	struct timespec b;
 	b.tv_sec = (int) r;
 	b.tv_nsec = 1000000000 * (r - b.tv_sec);
 
@@ -696,6 +699,11 @@ int main(int argc, char *argv[])
 
 	int cachefd = -1;
 
+	char value[64];
+	char units[64];
+
+	int retry_count = 0, ret2;
+
 	if (get_config(argc, argv) < 0) {
 		retc = 2;
 		goto cleanup;
@@ -711,11 +719,6 @@ int main(int argc, char *argv[])
 
 	hostfile = get_full_cache_path(config.cachepath, config.host);
 	cachefile = get_full_cache_path(config.cachepath, config.cachename);
-
-	char value[64];
-	char units[64];
-
-	int retry_count = 0, ret2;
 
 retry:
 	debug("Checking cache at %s\n", cachefile);
@@ -739,7 +742,6 @@ retry:
 		}
 
 		debug("Read %d bytes from %s\n", ret, config.gmetad_host);
-
 		if (config.dump) {
 			xmlfile = calloc((strlen(config.cachepath) + 9), sizeof(char));
 			sprintf(xmlfile, "%s/dump.xml", config.cachepath);
