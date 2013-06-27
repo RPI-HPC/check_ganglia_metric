@@ -201,17 +201,23 @@ static int fetch_xml(const char *host, int port, char **dest)
  * Ensure a path exists, create if it does not
  */
 
-static int ensure_path(const char *path)
+static int create_abs_path(const char *path)
 {
-	struct stat f;
+	char *copy = strdup(path);
+	char *p;
+	p = copy+1;
+	while((p = strchr(p, '/')) != NULL) {
+		p = strchr(p, '/');
+		*p = '\0';
+		printf("%s\n", copy);
+		if (mkdir(copy, S_IRWXU | S_IXOTH | S_IXGRP | S_IROTH | S_IRGRP) < 0 && errno != EEXIST)
+			return -1;
+		*p = '/';
+		p += 1;
+	}
 
-	if (stat(path, &f) == 0)
-		return 0;
-
-	if (errno != ENOENT)
-		return -1;
-
-	return mkdir(path, S_IRWXU | S_IXOTH | S_IXGRP | S_IROTH | S_IRGRP);
+	free(copy);
+	return 0;
 }
 
 /*
@@ -296,7 +302,6 @@ static int parse_xml_tree_to_cache(xmlNode *root, const char *cachepath, const c
 	FILE *f;
 	char filenamebuf[PATH_MAX];
 	int count;
-	int ret;
 
 	for (node = root->children; node; node = node->next) {
 		if (!is_element(node, "GRID"))
@@ -305,22 +310,12 @@ static int parse_xml_tree_to_cache(xmlNode *root, const char *cachepath, const c
 		grid = get_prop(node, "NAME");
 		debug("Found new grid: %s\n", grid);
 
-		snprintf(filenamebuf, PATH_MAX, "%s/%s", cachepath, grid);
-		ret = ensure_path(filenamebuf);
-		if (ret < 0)
-			return -1;
-
 		for (node2 = node->children; node2; node2 = node2->next) {
 			if (!is_element(node2, "CLUSTER"))
 				continue; /* skip non-element and non-cluster nodes */
 
 			cluster = get_prop(node2, "NAME");
 			debug("\tFound new cluster: %s\n", cluster);
-
-			snprintf(filenamebuf, PATH_MAX, "%s/%s/%s", cachepath, grid, cluster);
-			ret = ensure_path(filenamebuf);
-			if (ret < 0)
-				return -1;
 
 			for (node3 = node2->children; node3; node3 = node3->next) {
 				if (!is_element(node3, "HOST"))
@@ -337,8 +332,8 @@ static int parse_xml_tree_to_cache(xmlNode *root, const char *cachepath, const c
 				if (config.short_name) {
 					free(host);
 				}
-				ret = ensure_path(filenamebuf);
-				if (ret < 0)
+
+				if (create_abs_path(filenamebuf) < 0)
 					return -1;
 
 				count = 0;
