@@ -289,52 +289,14 @@ static int is_element(xmlNode *node, const char *name)
 		strcmp((const char *) node->name, name) == 0);
 }
 
-/*
- * Parse the XML out to per-host cache files
- */
-
-static int parse_xml_to_cache(const char *xml, int xlen,
-			      const char *cachepath, const char *cachefile)
+static int parse_xml_tree_to_cache(xmlNode *root, const char *cachepath, const char *cachefile)
 {
-	int retc = -1;
-
-	int ret;
-
-	xmlDoc *doc = NULL;
-	xmlNode *root = NULL;
-
-	/* suggested ABI check */
-	LIBXML_TEST_VERSION
-
-	doc = xmlReadMemory(xml, xlen, "xml", NULL, 0);
-
-	if (doc == NULL) {
-		xmlError *pErr = xmlGetLastError();
-		if (pErr == NULL) {
-			printf("panic!\n");
-			exit(100);
-		}
-
-		printf("Error parsing #%d (%d,%d)\n",
-		       pErr->code, pErr->line,pErr->int2);
-
-		goto cleanup;
-	}
-
-	root = xmlDocGetRootElement(doc);
-
 	xmlNode *node, *node2, *node3, *node4 = NULL;
-	if (strcmp((char *) root->name, "GANGLIA_XML") != 0) {
-		goto cleanup;
-	}
-
 	char *name, *units, *value, *grid, *cluster, *host;
-
 	FILE *f;
-
 	char filenamebuf[PATH_MAX];
-
 	int count;
+	int ret;
 
 	for (node = root->children; node; node = node->next) {
 		if (!is_element(node, "GRID"))
@@ -345,9 +307,8 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 
 		snprintf(filenamebuf, PATH_MAX, "%s/%s", cachepath, grid);
 		ret = ensure_path(filenamebuf);
-		if (ret < 0) {
-			goto cleanup;
-		}
+		if (ret < 0)
+			return -1;
 
 		for (node2 = node->children; node2; node2 = node2->next) {
 			if (!is_element(node2, "CLUSTER"))
@@ -358,9 +319,8 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 
 			snprintf(filenamebuf, PATH_MAX, "%s/%s/%s", cachepath, grid, cluster);
 			ret = ensure_path(filenamebuf);
-			if (ret < 0) {
-				goto cleanup;
-			}
+			if (ret < 0)
+				return -1;
 
 			for (node3 = node2->children; node3; node3 = node3->next) {
 				if (!is_element(node3, "HOST"))
@@ -377,16 +337,14 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 				if (config.short_name) {
 					free(host);
 				}
-				if (ret < 0) {
-					goto cleanup;
-				}
+				if (ret < 0)
+					return -1;
 
 				count = 0;
 
 				f = fopen(filenamebuf, "w");
-				if (f == NULL) {
-					goto cleanup;
-				}
+				if (f == NULL)
+					return -1;
 
 				value = get_prop(node3, "REPORTED");
 				fprintf(f, "#REPORTED, ,%s\n", value);
@@ -412,7 +370,47 @@ static int parse_xml_to_cache(const char *xml, int xlen,
 		}
 	}
 
-	retc = 0;
+	return 0;
+}
+
+/*
+ * Parse the XML out to per-host cache files
+ */
+
+static int parse_xml_to_cache(const char *xml, int xlen,
+			      const char *cachepath, const char *cachefile)
+{
+	int retc = -1;
+
+	xmlDoc *doc = NULL;
+	xmlNode *root = NULL;
+
+	/* suggested ABI check */
+	LIBXML_TEST_VERSION
+
+	doc = xmlReadMemory(xml, xlen, "xml", NULL, 0);
+
+	if (doc == NULL) {
+		xmlError *pErr = xmlGetLastError();
+		if (pErr == NULL) {
+			printf("panic!\n");
+			exit(100);
+		}
+
+		printf("Error parsing #%d (%d,%d)\n",
+		       pErr->code, pErr->line,pErr->int2);
+
+		goto cleanup;
+	}
+
+	root = xmlDocGetRootElement(doc);
+
+	if (strcmp((char *) root->name, "GANGLIA_XML") != 0) {
+		goto cleanup;
+	}
+
+	if (parse_xml_tree_to_cache(root, cachepath, cachefile) != 0)
+		retc = 0;
 
 cleanup:
 	xmlFreeDoc(doc);
